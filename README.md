@@ -13,10 +13,12 @@ Professional surveillance camera application with **real-time GPS tracking**, **
 
 ### 📸 **Camera & Video**
 - **High-Definition Photo Capture** with CameraX integration
-- **HD Video Recording** with audio support
+- **HD Video Recording** with audio support and enhanced processing
 - **Real-time Preview** with professional overlay
 - **Orientation Detection** (Portrait/Landscape adaptive UI)
 - **Custom Camera Controls** with Watch Dogs-style interface
+- **Advanced Video Processing** with 3-second sync delays for file integrity
+- **Multiple Video Formats** support with automatic gallery integration
 
 ### 🛰️ **Advanced GPS Tracking**
 - **Real-time Location Updates** every 5 seconds
@@ -25,12 +27,15 @@ Professional surveillance camera application with **real-time GPS tracking**, **
 - **GPS Status Indicators** with precision metrics
 - **Location Embedding** in photos and videos
 
-### 📤 **Automatic Transmission**
-- **Email Integration** with automatic photo/video sending
+### 📤 **Advanced File Sharing**
+- **Dual Email Integration** with automatic photo/video sending
+- **Robust Video Attachments** with FileProvider + URI fallback methods
 - **Web Server Upload** support for enterprise environments
 - **Configurable Recipients** and server endpoints
 - **GPS Metadata** included in all transmissions
-- **Secure File Sharing** via FileProvider
+- **Secure File Sharing** via FileProvider with multiple fallback options
+- **Gallery Integration** - Videos automatically saved to device gallery
+- **File System Synchronization** for reliable email attachments
 
 ### 🛡️ **Security & Anti-Piracy**
 - **Code Obfuscation** with ProGuard
@@ -141,7 +146,30 @@ This app implements multiple security layers:
 - **Runtime Checks**: Continuous security monitoring during execution
 - **Debug Protection**: Prevents debugging and analysis tools
 
-## 📝 License
+## � Changelog
+
+### v2.5 (September 2025) 🚀
+- ✅ **FIXED**: Video email attachments now work reliably
+- ✨ **NEW**: Custom ctOS icon integrated across all resolutions
+- 🔄 **ENHANCED**: Dual file sharing methods (FileProvider + URI fallback)
+- ⏱️ **IMPROVED**: 3-second video processing delay with filesystem sync
+- 📧 **ROBUST**: Comprehensive email attachment debugging and validation
+- 🗑️ **CLEANED**: Removed landscape layouts (portrait-only optimization)
+- 🏗️ **BUILD**: Added R8 obfuscation dictionary for better compilation
+
+### v2.4 (September 2025)
+- 📹 **NEW**: HD Video recording with audio support
+- 📱 **ENHANCED**: Gallery integration for automatic video saving
+- 🛡️ **SECURITY**: Anti-piracy protection implementation
+- 🎨 **UI**: Watch Dogs-inspired interface improvements
+
+### v2.3 (September 2025)
+- 🛰️ **ENHANCED**: Advanced GPS tracking with multiple strategies
+- 📧 **NEW**: Automatic email transmission functionality
+- ⚙️ **CONFIG**: Settings activity for app configuration
+- 🔒 **SECURITY**: Enhanced security measures and validation
+
+## �📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
