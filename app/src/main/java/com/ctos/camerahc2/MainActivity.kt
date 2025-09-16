@@ -13,6 +13,7 @@ import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
@@ -35,6 +36,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -163,9 +165,9 @@ class MainActivity : AppCompatActivity() {
 
             imageCapture = ImageCapture.Builder().build()
             
-            // 📹 Configurar VideoCapture
+            // 📹 Configurar VideoCapture con configuración básica y compatible
             val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                .setQualitySelector(QualitySelector.from(Quality.SD))
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
 
@@ -900,38 +902,136 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
     
     // 📹 Funciones de grabación de video
     private fun startVideoRecording() {
-        if (isVideoRecording) {
-            stopVideoRecording()
-            return
-        }
-        
-        val videoFile = File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), 
-            "ctOS_Video_${System.currentTimeMillis()}.mp4")
-        
-        val outputOptions = FileOutputOptions.Builder(videoFile).build()
-        
-        currentRecording = videoCapture?.output?.prepareRecording(this, outputOptions)
-            ?.withAudioEnabled()
-            ?.start(ContextCompat.getMainExecutor(this)) { recordEvent ->
-                when (recordEvent) {
-                    is VideoRecordEvent.Start -> {
-                        isVideoRecording = true
-                        updateVideoButtonUI()
-                        Toast.makeText(this, "🔴 GRABANDO VIDEO", Toast.LENGTH_SHORT).show()
-                    }
-                    is VideoRecordEvent.Finalize -> {
-                        isVideoRecording = false
-                        updateVideoButtonUI()
-                        if (!recordEvent.hasError()) {
-                            processVideoWithOverlay(videoFile)
-                            Toast.makeText(this, "✅ VIDEO GUARDADO: ${videoFile.name}", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(this, "❌ ERROR AL GRABAR VIDEO", Toast.LENGTH_SHORT).show()
-                            Log.e("CameraHC2", "Error en grabación: ${recordEvent.error}")
-                        }
-                    }
+        try {
+            if (isVideoRecording) {
+                stopVideoRecording()
+                return
+            }
+            
+            // Verificar permisos de audio
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
+                != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "❌ PERMISO DE AUDIO REQUERIDO", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Verificar permiso de almacenamiento para Android < 10
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
+                    != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "❌ PERMISO DE ALMACENAMIENTO REQUERIDO", Toast.LENGTH_SHORT).show()
+                    return
                 }
             }
+            
+            // Usar método más simple y compatible - guardar en Movies públicos
+            val moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+            val ctosDir = File(moviesDir, "ctOS_Videos")
+            if (!ctosDir.exists()) {
+                ctosDir.mkdirs()
+            }
+            
+            val videoFile = File(ctosDir, "ctOS_Video_${System.currentTimeMillis()}.mp4")
+            
+            Log.d("CameraHC2", "Iniciando grabación video: ${videoFile.absolutePath}")
+            Log.d("CameraHC2", "VideoCapture disponible: ${videoCapture != null}")
+            
+            val outputOptions = FileOutputOptions.Builder(videoFile).build()
+            
+            if (videoCapture == null) {
+                Toast.makeText(this, "❌ CÁMARA NO INICIALIZADA", Toast.LENGTH_SHORT).show()
+                Log.e("CameraHC2", "VideoCapture es null")
+                return
+            }
+            
+            currentRecording = videoCapture?.output?.prepareRecording(this, outputOptions)
+                ?.withAudioEnabled()
+                ?.start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+                    try {
+                        when (recordEvent) {
+                            is VideoRecordEvent.Start -> {
+                                isVideoRecording = true
+                                updateVideoButtonUI()
+                                Toast.makeText(this, "🔴 GRABANDO VIDEO", Toast.LENGTH_SHORT).show()
+                                Log.d("CameraHC2", "Video recording iniciado")
+                            }
+                            is VideoRecordEvent.Finalize -> {
+                                isVideoRecording = false
+                                updateVideoButtonUI()
+                                
+                                Log.d("CameraHC2", "Video finalizado. Error: ${recordEvent.hasError()}")
+                                if (recordEvent.hasError()) {
+                                    Log.e("CameraHC2", "Error en grabación: ${recordEvent.error}")
+                                    Toast.makeText(this, "❌ ERROR: ${recordEvent.error}", Toast.LENGTH_LONG).show()
+                                }
+                                
+                                if (!recordEvent.hasError()) {
+                                    Log.d("CameraHC2", "Video guardado exitosamente: ${videoFile.absolutePath}")
+                                    // Agregar a galería manualmente
+                                    MediaScannerConnection.scanFile(
+                                        this@MainActivity,
+                                        arrayOf(videoFile.absolutePath),
+                                        arrayOf("video/mp4"),
+                                        null
+                                    )
+                                    
+                                    // Delay más largo para asegurar que el archivo esté completamente escrito
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        // Verificar nuevamente que el archivo existe y tiene contenido
+                                        if (videoFile.exists() && videoFile.length() > 0) {
+                                            Log.d("CameraHC2", "Archivo verificado para procesamiento: ${videoFile.length()} bytes")
+                                            
+                                            // Forzar sync del sistema de archivos
+                                            try {
+                                                val fileInputStream = FileInputStream(videoFile)
+                                                fileInputStream.fd.sync()
+                                                fileInputStream.close()
+                                                Log.d("CameraHC2", "Sync del archivo completado para video")
+                                            } catch (e: Exception) {
+                                                Log.e("CameraHC2", "Error en sync del archivo: ${e.message}")
+                                            }
+                                            
+                                            processVideoWithOverlay(videoFile)
+                                        } else {
+                                            Log.e("CameraHC2", "Archivo no válido para procesamiento: existe=${videoFile.exists()}, tamaño=${videoFile.length()}")
+                                            Toast.makeText(this@MainActivity, "❌ ERROR: ARCHIVO DE VIDEO NO VÁLIDO", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }, 3000) // Aumentado a 3 segundos delay
+                                    
+                                    // Mensaje mejorado con información de envío
+                                    val hasEmail = !prefs.getString("email_address", "").isNullOrEmpty()
+                                    
+                                    val message = if (hasEmail) {
+                                        "✅ VIDEO GUARDADO EN GALERÍA\n📧 ENVIANDO POR EMAIL..."
+                                    } else {
+                                        "✅ VIDEO GUARDADO EN GALERÍA\n⚠️ CONFIGURA EMAIL PARA ENVÍO AUTO"
+                                    }
+                                    
+                                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(this, "❌ ERROR AL GRABAR VIDEO", Toast.LENGTH_SHORT).show()
+                                    Log.e("CameraHC2", "Error en grabación: ${recordEvent.error}")
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CameraHC2", "Error en callback de grabación: ${e.message}", e)
+                        Toast.makeText(this, "❌ ERROR EN GRABACIÓN: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            
+            if (currentRecording == null) {
+                Log.e("CameraHC2", "No se pudo iniciar la grabación")
+                Toast.makeText(this, "❌ NO SE PUDO INICIAR GRABACIÓN", Toast.LENGTH_SHORT).show()
+            }
+            
+        } catch (e: Exception) {
+            Log.e("CameraHC2", "Exception crítica en startVideoRecording: ${e.message}", e)
+            Toast.makeText(this, "❌ ERROR CRÍTICO: ${e.message}", Toast.LENGTH_LONG).show()
+            // Resetear estado en caso de error
+            isVideoRecording = false
+            updateVideoButtonUI()
+        }
     }
     
     private fun stopVideoRecording() {
@@ -953,30 +1053,29 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
     
     private fun processVideoWithOverlay(videoFile: File) {
         try {
-            // Para videos, solo guardamos el archivo original
-            // El overlay en video requiere procesamiento más complejo
-            Log.d("CameraHC2", "Video guardado: ${videoFile.absolutePath}")
+            // Para videos, el archivo ya está guardado en Movies públicos
+            Log.d("CameraHC2", "Video procesado: ${videoFile.absolutePath}")
             
-            // Agregar a galería
-            MediaScannerConnection.scanFile(
-                this,
-                arrayOf(videoFile.absolutePath),
-                arrayOf("video/mp4"),
-                null
-            )
+            // Debug de configuraciones
+            val emailAddress = prefs.getString("email_address", "") ?: ""
             
-            // Envío automático si está habilitado
-            if (prefs.getBoolean("auto_send_enabled", false)) {
-                if (prefs.getBoolean("use_server", false)) {
-                    uploadVideoToWebServer(videoFile)
-                } else {
-                    sendVideoByEmail(videoFile)
-                }
+            Log.d("CameraHC2", "Email: '$emailAddress'")
+            addTerminalLine(">> EMAIL: ${if (emailAddress.isNotEmpty()) "CONFIGURADO" else "NO CONFIG"}")
+            
+            // ENVÍO AUTOMÁTICO DE VIDEO: Siempre intentar enviar si hay email configurado
+            if (emailAddress.isNotEmpty()) {
+                addTerminalLine(">> ENVIANDO VIDEO POR EMAIL...")
+                sendVideoByEmail(videoFile)
+            } else {
+                addTerminalLine(">> VIDEO GUARDADO - CONFIGURA EMAIL PARA ENVÍO")
+                Toast.makeText(this, "⚠️ CONFIGURA EMAIL EN CONFIGURACIÓN PARA ENVÍO AUTOMÁTICO", Toast.LENGTH_LONG).show()
+                Log.d("CameraHC2", "Video guardado sin envío - email no configurado")
             }
             
         } catch (e: Exception) {
             Log.e("CameraHC2", "Error al procesar video: ${e.message}", e)
             Toast.makeText(this, "❌ ERROR AL PROCESAR VIDEO", Toast.LENGTH_SHORT).show()
+            addTerminalLine(">> ERROR AL PROCESAR VIDEO")
         }
     }
     
@@ -987,32 +1086,102 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
     }
     
     private fun sendVideoByEmail(videoFile: File) {
+        val emailAddress = prefs.getString("email_address", "") ?: ""
+        
+        Log.d("CameraHC2", "sendVideoByEmail iniciado para: ${videoFile.name}")
+        Log.d("CameraHC2", "Email configurado: '$emailAddress'")
+        Log.d("CameraHC2", "Archivo existe: ${videoFile.exists()}")
+        Log.d("CameraHC2", "Tamaño archivo: ${videoFile.length()} bytes")
+        
+        if (emailAddress.isEmpty()) {
+            Toast.makeText(this, "📧 CONFIGURA EMAIL EN CONFIGURACIÓN", Toast.LENGTH_SHORT).show()
+            addTerminalLine(">> ERROR: EMAIL NO CONFIGURADO")
+            return
+        }
+        
+        // Validar formato del email
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()) {
+            Toast.makeText(this, "📧 EMAIL INVÁLIDO: $emailAddress", Toast.LENGTH_SHORT).show()
+            addTerminalLine(">> ERROR: EMAIL INVÁLIDO")
+            return
+        }
+        
+        Log.d("CameraHC2", "Email válido, preparando intent...")
+        
         try {
             val emailIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "video/mp4"
-                putExtra(Intent.EXTRA_EMAIL, arrayOf(prefs.getString("email_address", "")))
-                putExtra(Intent.EXTRA_SUBJECT, "Secure Camera - ctOS Video - ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())}")
+                setPackage("com.google.android.gm") // Forzar Gmail si está disponible
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(emailAddress))
+                putExtra(Intent.EXTRA_SUBJECT, "📹 Secure Camera - ctOS Video - ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())}")
                 
                 val gpsText = currentLocation?.let { 
                     "LAT: ${"%.6f".format(it.latitude)} LON: ${"%.6f".format(it.longitude)}"
                 } ?: "GPS: NO DISPONIBLE"
                 
-                putExtra(Intent.EXTRA_TEXT, "Video capturado con Secure Camera - ctOS\n\nGPS: $gpsText\nFecha: ${SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())}")
+                val emailBody = """
+📹 SECURE CAMERA - ctOS VIDEO CAPTURE
+${SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())}
+${gpsText}
+                """.trimIndent()
                 
-                val videoUri = FileProvider.getUriForFile(
-                    this@MainActivity,
-                    "com.ctos.camerahc2.fileprovider",
-                    videoFile
-                )
-                putExtra(Intent.EXTRA_STREAM, videoUri)
+                putExtra(Intent.EXTRA_TEXT, emailBody)
+                
+                // Intentar múltiples métodos de compartir archivo
+                try {
+                    // Método 1: FileProvider (preferido)
+                    Log.d("CameraHC2", "Intentando FileProvider para archivo: ${videoFile.absolutePath}")
+                    Log.d("CameraHC2", "Archivo existe antes de URI: ${videoFile.exists()}")
+                    Log.d("CameraHC2", "Tamaño del archivo: ${videoFile.length()} bytes")
+                    
+                    val videoUri = FileProvider.getUriForFile(
+                        this@MainActivity,
+                        "com.ctos.camerahc2.fileprovider",
+                        videoFile
+                    )
+                    
+                    Log.d("CameraHC2", "URI generado: $videoUri")
+                    putExtra(Intent.EXTRA_STREAM, videoUri)
+                    
+                } catch (e: Exception) {
+                    Log.e("CameraHC2", "FileProvider falló, intentando URI directo: ${e.message}")
+                    // Método 2: URI directo como fallback
+                    val videoUri = android.net.Uri.fromFile(videoFile)
+                    Log.d("CameraHC2", "URI directo generado: $videoUri")
+                    putExtra(Intent.EXTRA_STREAM, videoUri)
+                }
+                
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             
-            startActivity(Intent.createChooser(emailIntent, "Enviar video por email"))
+            Log.d("CameraHC2", "Intent preparado, intentando iniciar actividad...")
+            
+            try {
+                startActivity(emailIntent)
+                Toast.makeText(this, "📧 GMAIL ABIERTO → PULSA ENVIAR", Toast.LENGTH_LONG).show()
+                addTerminalLine(">> EMAIL ABIERTO (GMAIL)")
+                Log.d("CameraHC2", "Video email abierto via Gmail: ${videoFile.name}")
+            } catch (e: Exception) {
+                Log.w("CameraHC2", "Gmail no disponible, usando selector: ${e.message}")
+                // Si Gmail no está disponible, usar selector general
+                emailIntent.setPackage(null)
+                if (emailIntent.resolveActivity(packageManager) != null) {
+                    startActivity(Intent.createChooser(emailIntent, "📧 Envio rápido ctOS:"))
+                    Toast.makeText(this, "📧 EMAIL LISTO → PULSA ENVIAR", Toast.LENGTH_LONG).show()
+                    addTerminalLine(">> EMAIL ABIERTO (SELECTOR)")
+                    Log.d("CameraHC2", "Video email abierto via selector: ${videoFile.name}")
+                } else {
+                    Toast.makeText(this, "❌ NO HAY APPS DE EMAIL", Toast.LENGTH_SHORT).show()
+                    addTerminalLine(">> ERROR: NO HAY APPS EMAIL")
+                    Log.e("CameraHC2", "No se encontraron apps de email instaladas")
+                }
+            }
             
         } catch (e: Exception) {
             Log.e("CameraHC2", "Error al enviar video por email: ${e.message}", e)
-            Toast.makeText(this, "❌ ERROR AL ENVIAR VIDEO", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "❌ ERROR AL ENVIAR VIDEO: ${e.message}", Toast.LENGTH_SHORT).show()
+            addTerminalLine(">> ERROR AL ENVIAR VIDEO")
         }
     }
     

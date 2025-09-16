@@ -4,4 +4,14 @@
     <external-files-path 
         name="ctos_images" 
         path="Pictures/ctOS_Images/" />
+    
+    <!-- Ruta para los videos en Movies públicos -->
+    <external-path 
+        name="movies_videos" 
+        path="Movies/" />
+        
+    <!-- Ruta raíz del almacenamiento externo para acceso completo -->
+    <external-path 
+        name="external_storage" 
+        path="." />
 </paths>
