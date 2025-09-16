@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer camera ring -->
+    <path android:fillColor="#666666"
+          android:pathData="M54,15C76.1,15 94,32.9 94,55C94,77.1 76.1,95 54,95C31.9,95 14,77.1 14,55C14,32.9 31.9,15 54,15Z"/>
+    
+    <!-- Camera lens gradient (purple to blue) -->
+    <path android:fillColor="#4A148C"
+          android:pathData="M54,22C71.7,22 86,36.3 86,54C86,71.7 71.7,86 54,86C36.3,86 22,71.7 22,54C22,36.3 36.3,22 54,22Z"/>
+    
+    <!-- Inner lens with blue -->
+    <path android:fillColor="#1976D2"
+          android:pathData="M54,30C66.7,30 77,40.3 77,53C77,65.7 66.7,76 54,76C41.3,76 31,65.7 31,53C31,40.3 41.3,30 54,30Z"/>
+    
+    <!-- Center dark lens -->
+    <path android:fillColor="#000000"
+          android:pathData="M54,40C60.6,40 66,45.4 66,52C66,58.6 60.6,64 54,64C47.4,64 42,58.6 42,52C42,45.4 47.4,40 54,40Z"/>
+    
+    <!-- Corner brackets -->
+    <!-- Top left -->
+    <path android:fillColor="#FFFFFF"
+          android:pathData="M20,20L30,20L30,22L22,22L22,30L20,30Z"/>
+    
+    <!-- Top right -->
+    <path android:fillColor="#FFFFFF"
+          android:pathData="M78,20L88,20L88,30L86,30L86,22L78,22Z"/>
+    
+    <!-- Bottom left -->
+    <path android:fillColor="#FFFFFF"
+          android:pathData="M20,78L22,78L22,86L30,86L30,88L20,88Z"/>
+    
+    <!-- Bottom right -->
+    <path android:fillColor="#FFFFFF"
+          android:pathData="M78,86L78,88L88,88L88,78L86,78L86,86Z"/>
+          
+</vector>

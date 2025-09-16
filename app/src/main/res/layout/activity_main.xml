@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    tools:context=".MainActivity">
+
+    <!-- Fondo oscuro con overlay verde -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#AA001100" />
+
+    <!-- Header con info de la cámara -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#AA000000"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvCameraId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CAM ID: HC-001"
+            android:textColor="#00FF00"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="STATUS: ACTIVE"
+            android:textColor="#00FF00"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnConfig"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚙️"
+            android:textSize="16sp"
+            android:background="@drawable/corner_overlay"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Área central para la vista de cámara -->
+    <FrameLayout
+        android:id="@+id/cameraContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout"
+        app:layout_constraintBottom_toTopOf="@id/overlayInfo">
+
+        <!-- Vista previa de la cámara en tiempo real -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Líneas de overlay estilo Watch Dogs superpuestas -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="center_vertical"
+            android:background="#8800FF00" />
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"
+            android:background="#8800FF00" />
+
+        <!-- Esquinas del overlay superpuestas -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="8dp"
+            android:background="@drawable/corner_overlay" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:background="@drawable/corner_overlay" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="8dp"
+            android:background="@drawable/corner_overlay" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="8dp"
+            android:background="@drawable/corner_overlay" />
+
+        <!-- Overlay de información sobre la cámara -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:orientation="vertical"
+            android:layout_margin="16dp"
+            android:background="#AA000000"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tvOverlayTimestamp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="REC 00:00:00"
+                android:textColor="#FF0000"
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvOverlayLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="GPS: ACQUIRING..."
+                android:textColor="#00FF00"
+                android:textSize="12sp"
+                android:fontFamily="monospace" />
+
+        </LinearLayout>
+
+        <!-- Botones de captura -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="20dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Botón de foto -->
+            <Button
+                android:id="@+id/btnCapture"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/camera_button"
+                android:text=""
+                android:textSize="0sp" />
+
+            <!-- Botón de video -->
+            <Button
+                android:id="@+id/btnVideo"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:background="@android:drawable/ic_menu_camera"
+                android:backgroundTint="#FF0000"
+                android:text="📹"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- Info overlay en la parte inferior -->
+    <LinearLayout
+        android:id="@+id/overlayInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#AA000000"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/tvTimestamp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TIMESTAMP: --:--:--"
+            android:textColor="#00FF00"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LAT: -- | LON: --"
+            android:textColor="#00FF00"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvTerminal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=">> INITIALIZING..."
+            android:textColor="#00FF00"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

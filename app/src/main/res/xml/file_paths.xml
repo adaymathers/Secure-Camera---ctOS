@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ruta para las imágenes de la app en almacenamiento externo -->
+    <external-files-path 
+        name="ctos_images" 
+        path="Pictures/ctOS_Images/" />
+</paths>
