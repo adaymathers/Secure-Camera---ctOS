@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.OrientationEventListener
 import android.widget.Button
+import android.widget.ScrollView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -726,8 +727,8 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
             else -> "- ${currentOrientation}°"
         }
         
-        // Actualizar el texto de sistema para incluir orientación
-        binding.tvTerminal.text = "${binding.tvTerminal.text}\n>> ORIENTACIÓN: $orientationText $rotationText"
+        // Actualizar el texto de sistema para incluir orientación (mantener solo últimas 5 líneas)
+        addTerminalLine(">> ORIENTACIÓN: $orientationText $rotationText")
         
         // Toast informativo ocasional
         if (Math.random() < 0.3) { // 30% probabilidad para no ser molesto
@@ -793,11 +794,11 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
         val runnable = object : Runnable {
             override fun run() {
                 if (messageIndex < messages.size) {
-                    // binding.tvTerminal.text = messages[messageIndex] // Comentado temporalmente
+                    addTerminalLine(messages[messageIndex])
                     messageIndex++
                     handler.postDelayed(this, 1500)
                 } else {
-                    // binding.tvTerminal.text = ">> RECORDING ACTIVE" // Comentado temporalmente
+                    addTerminalLine(">> RECORDING ACTIVE")
                 }
             }
         }
@@ -1012,6 +1013,26 @@ ${currentLocation?.let { "GPS: ${"%.6f".format(it.latitude)}, ${"%.6f".format(it
         } catch (e: Exception) {
             Log.e("CameraHC2", "Error al enviar video por email: ${e.message}", e)
             Toast.makeText(this, "❌ ERROR AL ENVIAR VIDEO", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    // 📟 Función auxiliar para manejar el terminal
+    private fun addTerminalLine(message: String) {
+        val currentText = binding.tvTerminal.text.toString()
+        val lines = if (currentText.isEmpty()) mutableListOf() else currentText.split("\n").toMutableList()
+        lines.add(message)
+        
+        // Mantener solo las últimas 5 líneas
+        while (lines.size > 5) {
+            lines.removeAt(0)
+        }
+        
+        binding.tvTerminal.text = lines.joinToString("\n")
+        
+        // Auto-scroll hacia abajo
+        binding.tvTerminal.post {
+            val scrollView = binding.tvTerminal.parent as? ScrollView
+            scrollView?.fullScroll(ScrollView.FOCUS_DOWN)
         }
     }
 }

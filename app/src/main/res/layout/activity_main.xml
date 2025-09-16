@@ -181,7 +181,7 @@
     <LinearLayout
         android:id="@+id/overlayInfo"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="120dp"
         android:orientation="vertical"
         android:padding="16dp"
         android:background="#AA000000"
@@ -207,15 +207,27 @@
             android:fontFamily="monospace"
             android:layout_marginBottom="4dp" />
 
-        <TextView
-            android:id="@+id/tvTerminal"
+        <!-- Terminal con scroll y altura limitada -->
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text=">> INITIALIZING..."
-            android:textColor="#00FF00"
-            android:textSize="11sp"
-            android:fontFamily="monospace"
-            android:textStyle="bold" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#11001100"
+            android:padding="4dp"
+            android:scrollbars="vertical"
+            android:fadeScrollbars="false">
+
+            <TextView
+                android:id="@+id/tvTerminal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=">> INITIALIZING..."
+                android:textColor="#00FF00"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+        </ScrollView>
 
     </LinearLayout>
 
